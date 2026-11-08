@@ -2,6 +2,8 @@
 
 An interactive Streamlit dashboard that turns **Canvas LMS course exports** into a full course evaluation: participation, pre/post test results, question-level difficulty, self-assessed growth, and sentiment of learner feedback. It also generates a ready-to-edit **Word report**.
 
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://course-eval-dashboard.streamlit.app/)
+
 It's built on [**course_eval**](https://github.com/AmeliaHuang325/course_eval), my Python package for analyzing course evaluations.
 
 ![Dashboard overview](images/overview.png)
