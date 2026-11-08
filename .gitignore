@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.DS_Store
+.streamlit/secrets.toml
+*.docx
+
+# Never commit real course exports: only the synthetic sample data is tracked
+*.csv
+!sample_data/*.csv
