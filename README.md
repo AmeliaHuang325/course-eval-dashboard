@@ -48,6 +48,10 @@ What it handles automatically:
 - **Enrollment filtering:** keeps only this course's rows from a Catalog export that lists every course, matched on the quiz's section ID.
 - **Privacy:** uploaded files are processed in memory for the session only, never stored. The repo's `.gitignore` blocks any CSV outside `sample_data/`.
 
+## Related Work: Course File Conversion
+
+I've also worked on the other end of the pipeline, getting course data into a data management system. I built an R/Shiny tool that cleaned course catalog files and converted them to XML for upload to an internal data management system. Because it's a Shiny app, files could be converted to upload-ready XML without running any code, replacing manual reformatting. It isn't published here because the target XML format is internal.
+
 ## How It's Built
 
 ```
