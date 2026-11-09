@@ -55,16 +55,19 @@ with st.sidebar:
         files = {
             "pre": st.file_uploader("Pre-test · Quiz Student Analysis report", type="csv"),
             "post": st.file_uploader("Post-test · Quiz Student Analysis report", type="csv"),
-            "eval": st.file_uploader("Evaluation · Survey Student Analysis report(s)", type="csv",
-                                     accept_multiple_files=True,
-                                     help="If the evaluation was reposted, upload every copy. They're merged, and a "
-                                          "learner who answered more than once is counted once (latest response)."),
-            "enroll": st.file_uploader("Enrollments · Canvas Catalog export", type="csv"),
+            "eval": st.file_uploader("Evaluation · Survey Student Analysis report", type="csv"),
         }
+        reposted = st.checkbox("The evaluation was reposted",
+                               help="Add the reposted copy's report too. The two are merged, and a learner who "
+                                    "answered both is counted once (latest response).")
+        if reposted:
+            files["eval_repost"] = st.file_uploader("Reposted evaluation · Survey Student Analysis report", type="csv")
+        files["enroll"] = st.file_uploader("Enrollments · Canvas Catalog export", type="csv")
         st.caption("Files are processed in memory for this session only and are never stored.")
         if all(files.values()):
-            raw = uploaded_data(files["pre"].getvalue(), files["post"].getvalue(),
-                                tuple(f.getvalue() for f in files["eval"]), files["enroll"].getvalue())
+            evaluations = tuple(files[k].getvalue() for k in ("eval", "eval_repost") if k in files)
+            raw = uploaded_data(files["pre"].getvalue(), files["post"].getvalue(), evaluations,
+                                files["enroll"].getvalue())
             if raw["eval_files"] > 1:
                 st.caption(f"Merged {raw['eval_files']} evaluation files into {len(raw['eval'])} responses.")
             if raw["eval_mismatch"]:

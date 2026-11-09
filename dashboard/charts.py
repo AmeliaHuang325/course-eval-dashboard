@@ -64,6 +64,7 @@ def flow(course: Course, s: dict) -> go.Figure:
               len(post_ids & eval_ids), len(post_ids - eval_ids)]
     fig = go.Figure(go.Sankey(
         arrangement="snap",
+        textfont=dict(color="#1F2A37", size=13, shadow="none"),   # solid dark labels, no glow over the flows
         node=dict(label=labels, pad=18, thickness=16, line=dict(width=0),
                   color=[NAVY, BLUES[5], NONE_GREY, BLUES[3], NONE_GREY, BLUES[2], NONE_GREY]),
         link=dict(source=[0, 0, 1, 1, 3, 3], target=[1, 2, 3, 4, 5, 6], value=values,

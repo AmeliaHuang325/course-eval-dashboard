@@ -39,7 +39,7 @@ The app reads the standard exports as-is, with no reformatting:
 |---|---|
 | Pre-test | Quiz → Quiz Statistics → **Student Analysis** report (CSV) |
 | Post-test | Quiz → Quiz Statistics → **Student Analysis** report (CSV) |
-| Evaluation | Survey → Quiz Statistics → **Student Analysis** report (CSV); upload every copy if the survey was reposted |
+| Evaluation | Survey → Quiz Statistics → **Student Analysis** report (CSV); if the survey was reposted, tick **The evaluation was reposted** and add the second report |
 | Enrollments | **Canvas Catalog** enrollment export (CSV) |
 
 What it handles automatically:
