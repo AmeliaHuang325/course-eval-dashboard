@@ -1,5 +1,7 @@
 import io
+import re
 
+import pandas as pd
 import plotly.graph_objects as go
 from docx import Document
 
@@ -45,3 +47,27 @@ def test_word_report():
     headings = [p.text for p in doc.paragraphs if p.style.name.startswith("Heading")]
     assert {"Key findings", "Test results", "Learner feedback"} <= set(headings)
     assert len(doc.inline_shapes) >= 6
+
+
+def test_reposted_evaluation_is_merged():
+    raw = d.load_sample()
+    full = raw["eval"]
+    # Simulate a repost: the second copy gets new Canvas question IDs, and one learner answers both copies
+    original, repost = full.iloc[: len(full) // 2].copy(), full.iloc[len(full) // 2:].copy()
+    repost.columns = [re.sub(r"^7(\d{3}):", r"8\1:", str(c)) for c in repost.columns]
+    again = original.iloc[[0]].copy()
+    again.columns = repost.columns
+    again["submitted"] = "2099-01-01 00:00:00 UTC"
+    again.iloc[0, list(again.columns).index(next(c for c in again.columns if "(EVAL_18)" in c))] = "Reposted answer"
+    repost = pd.concat([repost, again], ignore_index=True)
+
+    assert d.survey_mismatch([original, repost]) == []
+    merged = d.combine_surveys([original, repost])
+    assert len(merged) == full["id"].nunique()
+    assert list(merged.columns[:len(original.columns)]) == [c for c in original.columns if c in merged.columns]
+    row = merged[merged["id"] == original["id"].iat[0]]
+    assert row[next(c for c in merged.columns if "(EVAL_18)" in c)].iat[0] == "Reposted answer"   # latest kept
+
+    c = d.prepare({**raw, "eval": merged}, d.default_exclusions(raw["pre"]))
+    assert len(c.evaluation) == len(course().evaluation)
+    assert c.ksa == ("EVAL_01", "EVAL_02") and len(c.likert) == 12

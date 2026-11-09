@@ -60,6 +60,50 @@ def read_csv(source, survey: bool = False) -> pd.DataFrame:
     return pd.read_csv(source, low_memory=False, **kwargs)
 
 
+def _question_key(col) -> str | None:
+    """Match a question across reposts: Canvas gives each copy new IDs ('7002:' vs '8102:'), but the code stays."""
+    m = QUESTION_COLUMN.match(str(col))
+    if m:
+        return m["code"].strip()
+    m = re.match(r"^\d+:\s*(.*)$", str(col), re.S)
+    return " ".join(m[1].split()) if m else None
+
+
+def combine_surveys(frames: list[pd.DataFrame]) -> pd.DataFrame:
+    """Merge evaluation reports from the same course, e.g. when the survey was reposted.
+
+    Question columns are lined up by their code, so the copies can have different Canvas
+    question IDs. A learner who answered more than one copy is counted once, keeping their
+    latest submission.
+    """
+    if len(frames) == 1:
+        return frames[0]
+    first = frames[0]
+    names = {_question_key(c): c for c in first.columns if _question_key(c)}
+    aligned = []
+    for frame in frames:
+        # Keep learner info and question columns; Canvas's per-question points columns ('1.0.3') are not used for surveys
+        keep = [c for c in frame.columns if _question_key(c) or not re.fullmatch(r"\d+\.\d+(\.\d+)*", str(c))]
+        frame = frame[keep].rename(columns=lambda c: names.get(_question_key(c), c) if _question_key(c) else c)
+        aligned.append(frame)
+    merged = pd.concat(aligned, ignore_index=True)
+    key = "id" if "id" in merged else "name"
+    order = pd.to_datetime(merged.get("submitted"), errors="coerce", utc=True) if "submitted" in merged else None
+    if order is not None:
+        merged = merged.assign(_order=order).sort_values(["_order", "attempt"] if "attempt" in merged else "_order",
+                                                         na_position="first").drop(columns="_order")
+    merged = merged.drop_duplicates(key, keep="last")
+    if "attempt" in merged:
+        merged["attempt"] = 1          # one row per learner now; stops filter_max_attempts mixing copies
+    return merged.reset_index(drop=True)
+
+
+def survey_mismatch(frames: list[pd.DataFrame]) -> list[str]:
+    """Question codes that are not in every evaluation file (empty when the copies match)."""
+    sets = [{_question_key(c) for c in f.columns if QUESTION_COLUMN.match(str(c))} for f in frames]
+    return sorted(set.union(*sets) - set.intersection(*sets)) if len(sets) > 1 else []
+
+
 def load_sample() -> dict[str, pd.DataFrame]:
     return {key: read_csv(SAMPLE_DIR / name, survey=(key == "eval")) for key, name in SAMPLE_FILES.items()}
 

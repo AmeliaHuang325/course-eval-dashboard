@@ -37,9 +37,10 @@ def sample_data() -> dict:
 
 
 @st.cache_data(show_spinner=False)
-def uploaded_data(pre: bytes, post: bytes, evaluation: bytes, enroll: bytes) -> dict:
-    return {"pre": d.read_csv(pre), "post": d.read_csv(post), "eval": d.read_csv(evaluation, survey=True),
-            "enroll": d.read_csv(enroll)}
+def uploaded_data(pre: bytes, post: bytes, evaluations: tuple[bytes, ...], enroll: bytes) -> dict:
+    surveys = [d.read_csv(b, survey=True) for b in evaluations]
+    return {"pre": d.read_csv(pre), "post": d.read_csv(post), "eval": d.combine_surveys(surveys),
+            "enroll": d.read_csv(enroll), "eval_mismatch": d.survey_mismatch(surveys), "eval_files": len(surveys)}
 
 
 # Sidebar -----------------------------------------------------------------------
@@ -54,12 +55,21 @@ with st.sidebar:
         files = {
             "pre": st.file_uploader("Pre-test · Quiz Student Analysis report", type="csv"),
             "post": st.file_uploader("Post-test · Quiz Student Analysis report", type="csv"),
-            "eval": st.file_uploader("Evaluation · Survey Student Analysis report", type="csv"),
+            "eval": st.file_uploader("Evaluation · Survey Student Analysis report(s)", type="csv",
+                                     accept_multiple_files=True,
+                                     help="If the evaluation was reposted, upload every copy. They're merged, and a "
+                                          "learner who answered more than once is counted once (latest response)."),
             "enroll": st.file_uploader("Enrollments · Canvas Catalog export", type="csv"),
         }
         st.caption("Files are processed in memory for this session only and are never stored.")
         if all(files.values()):
-            raw = uploaded_data(*(files[k].getvalue() for k in ("pre", "post", "eval", "enroll")))
+            raw = uploaded_data(files["pre"].getvalue(), files["post"].getvalue(),
+                                tuple(f.getvalue() for f in files["eval"]), files["enroll"].getvalue())
+            if raw["eval_files"] > 1:
+                st.caption(f"Merged {raw['eval_files']} evaluation files into {len(raw['eval'])} responses.")
+            if raw["eval_mismatch"]:
+                st.warning("The evaluation files don't have the same questions. Only in some files: "
+                           + ", ".join(raw["eval_mismatch"]))
 
     if raw is not None:
         names = sorted(raw["pre"]["name"].dropna().astype(str).unique())

@@ -39,12 +39,13 @@ The app reads the standard exports as-is, with no reformatting:
 |---|---|
 | Pre-test | Quiz → Quiz Statistics → **Student Analysis** report (CSV) |
 | Post-test | Quiz → Quiz Statistics → **Student Analysis** report (CSV) |
-| Evaluation | Survey → Quiz Statistics → **Student Analysis** report (CSV) |
+| Evaluation | Survey → Quiz Statistics → **Student Analysis** report (CSV); upload every copy if the survey was reposted |
 | Enrollments | **Canvas Catalog** enrollment export (CSV) |
 
 What it handles automatically:
 - **Learner records:** keeps each learner's latest attempt, matched on their Canvas user ID, and lets you exclude test or instructor accounts.
 - **Question structure:** detects the questions, the pre/post pairs, the correct answers, the before/after self-rating pair, the agreement statements and the open-ended questions from Canvas's column layout.
+- **Reposted evaluations:** merges several evaluation reports for one course. Questions are matched by their code, since each copy gets new Canvas question IDs. A learner who answered more than one copy is counted once, using their latest response. A warning appears if the copies' questions differ.
 - **Enrollment filtering:** keeps only this course's rows from a Catalog export that lists every course, matched on the quiz's section ID.
 - **Privacy:** uploaded files are processed in memory for the session only, never stored. The repo's `.gitignore` blocks any CSV outside `sample_data/`.
 
